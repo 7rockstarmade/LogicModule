@@ -3,10 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 from pydantic import BaseModel
-
-
-SECRET_KEY = "key123123123"
-ALGORITHM = "HS256"
+from app.core.config import settings
 
 auth_scheme = HTTPBearer()
 
@@ -30,8 +27,8 @@ def decode_access_token(token: str) -> TokenPayload:
     try:
         payload = jwt.decode(
             token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
+            settings.secret_key,
+            algorithms=[settings.algorithm],
         )
     except JWTError as e:
         raise HTTPException(
