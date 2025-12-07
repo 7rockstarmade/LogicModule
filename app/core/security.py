@@ -1,75 +1,44 @@
-from typing import List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+from jose import jwt, JWTError
 from pydantic import BaseModel
+from typing import List, Optional
 from app.core.config import settings
 
 auth_scheme = HTTPBearer()
 
 
-class TokenPayload(BaseModel):
-    sub: int
-    fullName: Optional[str] = None
-    roles: List[str] = []
-    permissions: List[str] = []
-    blocked: bool = False
-
-
 class CurrentUser(BaseModel):
     id: int
-    full_name: Optional[str] = None
+    username: str
+    full_name: str
+    roles: List[str] = []
     permissions: List[str] = []
-    blocked: bool = False
+    is_blocked: bool = False
 
 
-def decode_access_token(token: str) -> TokenPayload:
-    try:
-        payload = jwt.decode(
-            token,
-            settings.secret_key,
-            algorithms=[settings.algorithm],
-        )
-    except JWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="UNAUTHORIZED",
-        )
-
-    try:
-        token_data = TokenPayload(**payload)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="UNAUTHORIZED",
-        )
-
-    return token_data
-
-
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme)) -> CurrentUser:
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),) -> CurrentUser:
     token = credentials.credentials
-    token_data = decode_access_token(token)
 
-    user = CurrentUser(
-        id=token_data.sub,
-        full_name=token_data.fullName,
-        permissions=token_data.permissions,
-        blocked=token_data.blocked,
-    )
-
-    if user.blocked:
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+    except JWTError:
         raise HTTPException(
-            status_code=418,
-            detail="User is blocked",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
         )
-    return user
 
-
-def get_current_active_user(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
-    if current_user.blocked:
+    try:
+        return CurrentUser(
+            id=int(payload["sub"]),
+            username=payload.get("username", ""),
+            full_name=payload.get("fullName"),
+            roles=payload.get("roles", []),
+            permissions=payload.get("permissions", []),
+            blocked=payload.get("blocked", False),
+        )
+    except Exception:
         raise HTTPException(
-            status_code=418,
-            detail="User is blocked",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
         )
-    return current_user

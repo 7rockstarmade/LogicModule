@@ -1,4 +1,5 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
+from typing import Iterable
 
 class Permissions:
     USER_LIST_READ      = "user:list:read"
@@ -37,18 +38,33 @@ class Permissions:
     ANSWER_DEL          = "answer:del"
     
    
-
-def require_permission(user, permission: str):
-    if user.blocked:
-        raise HTTPException(status_code=418, detail="User is blocked")
-    if permission not in user.permissions:
-        raise HTTPException(status_code=403, detail="Forbidden")
+class PermissionError(HTTPException):
+    """Специальная ошибка для отказа в доступе."""
+    def __init__(self, detail: str = "Forbidden"):
+        super().__init__(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
 
 
-def require_self_or_permission(user, target_user_id: int, permission: str):
-    if user.blocked:
-        raise HTTPException(status_code=418, detail="User is blocked")
-    if target_user_id == user.id:
+def has_permission(user_permissions: Iterable[str], permission: str) -> bool:
+    return permission in user_permissions
+
+
+def ensure_permission(user_permissions: Iterable[str], permission: str, msg: str | None = None) -> None:
+    """Бросит 403, если у пользователя нет нужного permission."""
+    if permission not in user_permissions:
+        raise PermissionError(detail=msg or f"Missing permission: {permission}")
+
+
+def ensure_default_or_permission(
+    default_allowed: bool,
+    user_permissions: Iterable[str],
+    permission: str,
+    msg: str | None = None,
+) -> None:
+    """
+    Если default_allowed == True — доступ есть по умолчанию.
+    Если False — нужно наличие permission, иначе 403.
+    """
+    if default_allowed:
         return
-    if permission not in user.permissions:
-        raise HTTPException(status_code=403, detail="Forbidden")
+    if permission not in user_permissions:
+        raise PermissionError(detail=msg or f"Missing permission: {permission}")

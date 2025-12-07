@@ -5,14 +5,19 @@ class UserBase(BaseModel):
     username: str
     full_name: str
     email: Optional[EmailStr] = None
+    is_blocked: bool
 
 class UserCreate(UserBase):
     pass
 
 class UserRead(UserBase):
     id: int
-    is_blocked: bool
-    roles: List[str] = [] 
+
+    class Config:
+        orm_mode = True
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
 
     class Config:
         orm_mode = True
