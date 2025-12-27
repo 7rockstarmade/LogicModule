@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.services.users import list_users, get_user_basic_info, update_user_full_name, create_user
+from app.services.users import list_users, get_user_basic_info, update_user_full_name, create_user, get_user_roles, get_user_block_status
 from app.db.session import get_db
 from app.schemas.user import UserCreate, UserRead, UserUpdate, UserBase
 from app.core.security import CurrentUser, get_current_user
@@ -29,7 +29,24 @@ def change_user_full_name(user_id: int, user_in: UserUpdate, db: Session = Depen
     return user
 
 
+@router.get('/users/{user_id}/data')
+def get_user_roles_by_id(user_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    user_roles = get_user_roles(
+        db=db,
+        current_user=current_user,
+        user_id=user_id
+    )
+    return user_roles
 
+
+@router.get('users/{user_id}/block')
+def user_block_status(user_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    user_block_status = get_user_block_status(
+        db=db,
+        current_user=current_user,
+        user_id=user_id
+    )
+    return user_block_status
 
 
 # ТЕСТОВЫЙ ЭНД-ПОИНТ

@@ -6,22 +6,28 @@ from app.core.security import CurrentUser
 from app.core.permissions import ensure_permission
 from app.core.permissions import *
 
-
+"""
+Получить пользователя из БД
+Вспомогательная-private функция
+"""
 def _get_user_or_404(db: Session, user_id: int) -> User:
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
-# Получение списка всех пользователей
+
+"""
+Получить список всех пользователей
+Доступ:
+  - permission: user:list:read
+"""
 def list_users(db: Session, current_user: CurrentUser) -> list[User]:
-    """
-    Получить список всех пользователей
-    Доступ:
-      - permission: user:list:read
-    """
     # Проверка разрешения на просмотр списка пользователей
-    ensure_permission(current_user.permissions, Permissions.USER_LIST_READ, "You do not have permission to list users")
+    ensure_permission(
+        current_user.permissions, 
+        Permissions.USER_LIST_READ, 
+        "You do not have permission to list users")
     return db.query(User).all()
 
 
@@ -37,16 +43,13 @@ def get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) ->
     return user
 
 
-# Изменение ФИО пользователя
-def update_user_full_name(
-    db: Session, current_user: CurrentUser, user_id: int, new_full_name: str
-) -> User:
-    """
-    Изменить ФИО пользователя.
-    Доступ:
-      + Себе
-      - Другому (нужен permission user:fullName:write)
-    """
+"""
+Изменить ФИО пользователя.
+Доступ:
+  + Себе
+  - Другому (нужен permission user:fullName:write)
+"""
+def update_user_full_name(db: Session, current_user: CurrentUser, user_id: int, new_full_name: str) -> User:
     is_self = current_user.id == user_id
     ensure_permission(
         current_user.permissions,
@@ -67,14 +70,16 @@ def get_user_data():
     #потом доделаю
 
 
-# Получение ролей пользователя
+"""
+Получить роли пользователя.
+Доступ:
+  - permission: user:roles:read
+"""
 def get_user_roles(db: Session, current_user: CurrentUser, user_id: int) -> list[str]:
-    """
-    Получить роли пользователя.
-    Доступ:
-      - permission: user:roles:read
-    """
-    ensure_permission(current_user.permissions, Permissions.USER_ROLES_READ, "You do not have permission to view roles")
+    ensure_permission(
+        current_user.permissions, 
+        Permissions.USER_ROLES_READ, 
+        "You do not have permission to view roles")
 
     # Если пользователь запрашивает свои роли, отдаем их из текущего токена
     if user_id == current_user.id:
@@ -87,27 +92,28 @@ def get_user_roles(db: Session, current_user: CurrentUser, user_id: int) -> list
     )
 
 
-# Блокировка/разблокировка пользователя
+"""
+Получить статус блокировки пользователя.
+Доступ:
+  - permission: user:block:read
+"""
 def get_user_block_status(db: Session, current_user: CurrentUser, user_id: int) -> bool:
-    """
-    Получить статус блокировки пользователя.
-    Доступ:
-      - permission: user:block:read
-    """
     ensure_permission(current_user.permissions, Permissions.USER_BLOCK_READ, "You do not have permission to view block status")
     user = _get_user_or_404(db, user_id)
     return user.is_blocked
 
 
-def set_user_block_status(
-    db: Session, current_user: CurrentUser, user_id: int, blocked: bool
-) -> User:
-    """
-    Заблокировать или разблокировать пользователя.
-    Доступ:
-      - permission: user:block:write
-    """
-    ensure_permission(current_user.permissions, Permissions.USER_BLOCK_WRITE, "You do not have permission to change block status")
+"""
+Заблокировать или разблокировать пользователя.
+Доступ:
+  - permission: user:block:write
+"""
+def set_user_block_status(db: Session, current_user: CurrentUser, user_id: int, blocked: bool) -> User:
+    ensure_permission(
+        current_user.permissions, 
+        Permissions.USER_BLOCK_WRITE, 
+        "You do not have permission to change block status"
+    )
     
     user = _get_user_or_404(db, user_id)
     user.is_blocked = blocked
@@ -116,12 +122,11 @@ def set_user_block_status(
     return user
 
 
-# Заглушка на изменение ролей
+"""
+Изменить роли пользователя.
+Заглушка, так как изменение ролей производится через отдельный модуль авторизации.
+"""
 def update_user_roles(db: Session, current_user: CurrentUser, user_id: int, roles: list[str]) -> User:
-    """
-    Изменить роли пользователя.
-    Заглушка, так как изменение ролей производится через отдельный модуль авторизации.
-    """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Role management is handled by the authorization module"
@@ -130,13 +135,17 @@ def update_user_roles(db: Session, current_user: CurrentUser, user_id: int, role
 
 
 
-#ТЕСТОВАЯ ФУНКЦИЯ
-def create_user(db: Session, data: UserBase) -> User:
+"""
+Запись пользователя.
+Вызывается модулем логики при создании нового пользователя
+"""
+def create_user(db: Session, data: UserCreate, user_id: int) -> User:
     user = User(
+        id = user_id,
         username = data.username,
         full_name = data.full_name,
+        email = data.email,
         is_blocked = data.is_blocked,
-        
     )
     db.add(user)
     db.commit()
