@@ -29,7 +29,7 @@ def change_user_full_name(user_id: int, user_in: UserUpdate, db: Session = Depen
     return user
 
 
-@router.get('/users/{user_id}/data')
+@router.get('/{user_id}/data')
 def get_user_roles_by_id(user_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     user_roles = get_user_roles(
         db=db,
@@ -39,7 +39,7 @@ def get_user_roles_by_id(user_id: int, db: Session = Depends(get_db), current_us
     return user_roles
 
 
-@router.get('users/{user_id}/block')
+@router.get('/{user_id}/block')
 def user_block_status(user_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     user_block_status = get_user_block_status(
         db=db,
@@ -57,5 +57,5 @@ def create_user_endpoint(db: Session = Depends(get_db), current_user: CurrentUse
         full_name=current_user.full_name,
         is_blocked=current_user.is_blocked
     )
-    user = create_user(db, data)
+    user = create_user(db, data, current_user.id)
     return user
