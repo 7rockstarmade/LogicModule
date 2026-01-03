@@ -1,8 +1,9 @@
+from typing import Optional
 from pydantic import BaseModel
 
 class CourseBase(BaseModel):
     title: str
-    description: str
+    description: Optional[str] = None
 
 class CourseCreate(CourseBase):
     pass

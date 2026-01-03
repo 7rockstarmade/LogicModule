@@ -1,14 +1,13 @@
 from pydantic import BaseModel
 from datetime import datetime
 
-class CourseUserBase(BaseModel):
+class CourseUserCreate(BaseModel):
+    course_id: int
+
+class CourseUserRead(BaseModel):
     course_id: int
     user_id: int
     enrolled_at: datetime
 
-class CourseUserCreate(CourseUserBase):
-    pass
-
-class CourseUserRead(CourseUserBase):
     class Config:
         orm_mode = True
