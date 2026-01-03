@@ -22,7 +22,7 @@ def _get_user_or_404(db: Session, user_id: int) -> User:
 Доступ:
   - permission: user:list:read
 """
-def _list_users(db: Session, current_user: CurrentUser) -> list[User]:
+def list_users(db: Session, current_user: CurrentUser) -> list[User]:
     # Проверка разрешения на просмотр списка пользователей
     ensure_permission(
         current_user.permissions, 
@@ -32,7 +32,7 @@ def _list_users(db: Session, current_user: CurrentUser) -> list[User]:
 
 
 # Получение информации о пользователе (ФИО)
-def _get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) -> User:
+def get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) -> User:
     """
     Получить информацию о пользователе (ФИО).
     Доступ:
@@ -49,7 +49,7 @@ def _get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) -
   + Себе
   - Другому (нужен permission user:fullName:write)
 """
-def _update_user_full_name(db: Session, current_user: CurrentUser, user_id: int, new_full_name: str) -> User:
+def update_user_full_name(db: Session, current_user: CurrentUser, user_id: int, new_full_name: str) -> User:
     is_self = current_user.id == user_id
     ensure_permission(
         current_user.permissions,
@@ -65,7 +65,7 @@ def _update_user_full_name(db: Session, current_user: CurrentUser, user_id: int,
 
 
 # Получение информации о пользователе (курсы, оценки, тесты)
-def _get_user_data():
+def get_user_data():
     ...
     #потом доделаю
 
@@ -75,7 +75,7 @@ def _get_user_data():
 Доступ:
   - permission: user:roles:read
 """
-def _get_user_roles(db: Session, current_user: CurrentUser, user_id: int) -> list[str]:
+def get_user_roles(db: Session, current_user: CurrentUser, user_id: int) -> list[str]:
     ensure_permission(
         current_user.permissions, 
         Permissions.USER_ROLES_READ, 
@@ -97,7 +97,7 @@ def _get_user_roles(db: Session, current_user: CurrentUser, user_id: int) -> lis
 Доступ:
   - permission: user:block:read
 """
-def _get_user_block_status(db: Session, current_user: CurrentUser, user_id: int) -> bool:
+def get_user_block_status(db: Session, current_user: CurrentUser, user_id: int) -> bool:
     ensure_permission(current_user.permissions, Permissions.USER_BLOCK_READ, "You do not have permission to view block status")
     user = _get_user_or_404(db, user_id)
     return user.is_blocked
@@ -108,7 +108,7 @@ def _get_user_block_status(db: Session, current_user: CurrentUser, user_id: int)
 Доступ:
   - permission: user:block:write
 """
-def _set_user_block_status(db: Session, current_user: CurrentUser, user_id: int, blocked: bool) -> User:
+def set_user_block_status(db: Session, current_user: CurrentUser, user_id: int, blocked: bool) -> User:
     ensure_permission(
         current_user.permissions, 
         Permissions.USER_BLOCK_WRITE, 
@@ -126,20 +126,18 @@ def _set_user_block_status(db: Session, current_user: CurrentUser, user_id: int,
 Изменить роли пользователя.
 Заглушка, так как изменение ролей производится через отдельный модуль авторизации.
 """
-def _update_user_roles(db: Session, current_user: CurrentUser, user_id: int, roles: list[str]) -> User:
+def update_user_roles(db: Session, current_user: CurrentUser, user_id: int, roles: list[str]) -> User:
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail="Role management is handled by the authorization module"
     )
 
 
-
-
 """
 Запись пользователя.
 Вызывается модулем логики при создании нового пользователя
 """
-def _create_user(db: Session, data: UserCreate, user_id: int) -> User:
+def create_user(db: Session, data: UserCreate, user_id: int) -> User:
     user = User(
         id = user_id,
         username = data.username,

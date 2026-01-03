@@ -3,3 +3,4 @@ requirements.txt
 .venv
 __pycache__/
 app/utils/create_test_key.py
+tokens.txt
