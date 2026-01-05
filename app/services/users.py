@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from app.models.users import User
 from app.schemas.user import UserCreate, UserRead, UserBase
@@ -51,12 +52,7 @@ def get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) ->
 """
 def update_user_full_name(db: Session, current_user: CurrentUser, user_id: int, new_full_name: str) -> User:
     is_self = current_user.id == user_id
-    ensure_permission(
-        current_user.permissions,
-        Permissions.USER_FULLNAME_WRITE if not is_self else "",
-        "You do not have permission to update this user's full name"
-    )
-    
+    ensure_default_or_permission(is_self, current_user.permissions, Permissions.USER_FULLNAME_WRITE, "You do not have permission to update this user's full name")
     user = _get_user_or_404(db, user_id)
     user.full_name = new_full_name
     db.commit()
@@ -139,13 +135,23 @@ def update_user_roles(db: Session, current_user: CurrentUser, user_id: int, role
 """
 def create_user(db: Session, data: UserCreate, user_id: int) -> User:
     user = User(
-        id = user_id,
-        username = data.username,
-        full_name = data.full_name,
-        email = data.email,
-        is_blocked = data.is_blocked,
+        id=user_id,
+        username=data.username,
+        full_name=data.full_name,
+        email=data.email,
+        is_blocked=data.is_blocked,
     )
+
     db.add(user)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with given id, username or email already exists"
+        )
+
     db.refresh(user)
     return user

@@ -8,7 +8,7 @@ from app.schemas.course import CourseRead, CourseListRead
 from app.schemas.course_user import CourseUserRead
 from app.services.course import (
     list_courses,
-    get_course,
+    _get_course_or_404,
     create_course,
     update_course,
     delete_course,
@@ -28,7 +28,7 @@ def api_list_courses(db: Session = Depends(get_db)):
 
 @router.get("/{course_id}", response_model=CourseRead)
 def api_get_course(course_id: int, db: Session = Depends(get_db)):
-    return get_course(db, course_id)
+    return _get_course_or_404(db, course_id)
 
 
 @router.post("/", response_model=CourseRead)
