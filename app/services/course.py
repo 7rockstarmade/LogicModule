@@ -7,6 +7,7 @@ from app.models.course_users import CourseUser
 from app.models.tests import Test
 from app.core.security import CurrentUser
 from app.core.permissions import Permissions
+from app.schemas.course_user import CourseUserRead
 from app.core.permissions import ensure_permission, ensure_default_or_permission
 
 # ---------------- Вспомогательные функции ----------------
@@ -36,14 +37,6 @@ def _is_course_teacher(course: Course, user: CurrentUser) -> bool:
 """
 def _is_student_enrolled(course: Course, user: CurrentUser) -> bool:
     return any(link.user_id == user.id for link in course.students_links)
-
-
-"""
-Обёртка для проверки доступа с дефолтным разрешением.
-Выбрасывает PermissionError при отсутствии разрешения.
-"""
-def _check_default_or_permission(default_allowed: bool, current_user: CurrentUser, permission: str, msg: str | None = None):
-    ensure_default_or_permission(default_allowed, current_user.permissions, permission, msg)
 
 
 # ---------------- Бизнес-логика ----------------
@@ -78,7 +71,7 @@ def create_course(db: Session, current_user: CurrentUser, title: str, descriptio
 def update_course(db: Session, course_id: int, current_user: CurrentUser, title: str | None, description: str | None) -> Course:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_INFO_WRITE)
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_INFO_WRITE)
 
     if title:
         course.title = title
@@ -99,7 +92,7 @@ def update_course(db: Session, course_id: int, current_user: CurrentUser, title:
 def delete_course(db: Session, course_id: int, current_user: CurrentUser) -> Course:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_DEL)
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_DEL)
 
     course.is_deleted = True
     db.commit()
@@ -116,7 +109,7 @@ def delete_course(db: Session, course_id: int, current_user: CurrentUser) -> Cou
 def list_course_tests(db: Session, course_id: int, current_user: CurrentUser) -> List[Test]:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user) or _is_student_enrolled(course, current_user)
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_TESTLIST)
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_TESTLIST)
     return course.tests
 
 
@@ -126,11 +119,11 @@ def list_course_tests(db: Session, course_id: int, current_user: CurrentUser) ->
   - по умолчанию: преподаватель курса
   - permission: 'course:userList' для остальных
 """
-def list_course_students(db: Session, course_id: int, current_user: CurrentUser) -> List[int]:
+def list_course_students(db: Session, course_id: int, current_user: CurrentUser) -> List[CourseUser]:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_USERLIST)
-    return [link.user_id for link in course.students_links]
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_USERLIST)
+    return course.students_links
 
 
 """
@@ -143,7 +136,7 @@ def enroll_user_to_course(db: Session, course_id: int, current_user: CurrentUser
     course = _get_course_or_404(db, course_id)
     target_user_id = target_user_id or current_user.id
     default_allowed = target_user_id == current_user.id
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_USER_ADD)
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_USER_ADD)
 
     existing = db.query(CourseUser).filter_by(course_id=course_id, user_id=target_user_id).first()
     if existing:
@@ -165,7 +158,7 @@ def enroll_user_to_course(db: Session, course_id: int, current_user: CurrentUser
 def remove_user_from_course(db: Session, course_id: int, user_id: int, current_user: CurrentUser) -> None:
     course = _get_course_or_404(db, course_id)
     default_allowed = user_id == current_user.id
-    _check_default_or_permission(default_allowed, current_user, Permissions.COURSE_DEL)
+    ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_DEL)
 
     link = db.query(CourseUser).filter_by(course_id=course_id, user_id=user_id).first()
     if link:
