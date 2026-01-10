@@ -106,11 +106,22 @@ def delete_course(db: Session, course_id: int, current_user: CurrentUser) -> Cou
   - по умолчанию: преподаватель курса или студент на курсе
   - permission: 'course:testList' для остальных
 """
-def list_course_tests(db: Session, course_id: int, current_user: CurrentUser) -> List[Test]:
+def list_course_tests(db: Session, course_id: int, current_user: CurrentUser,) -> list[Test]:
     course = _get_course_or_404(db, course_id)
-    default_allowed = _is_course_teacher(course, current_user) or _is_student_enrolled(course, current_user)
+    default_allowed = (
+        _is_course_teacher(course, current_user)
+        or _is_student_enrolled(course, current_user)
+    )
     ensure_default_or_permission(default_allowed, current_user, Permissions.COURSE_TESTLIST)
-    return course.tests
+
+    return (
+        db.query(Test)
+        .filter(
+            Test.course_id == course_id,
+            Test.is_deleted == False,
+        )
+        .all()
+    )
 
 
 """

@@ -6,7 +6,8 @@ from app.core.security import CurrentUser, get_current_user
 from app.db.session import get_db
 from app.schemas.course import CourseRead, CourseListRead
 from app.schemas.course_user import CourseUserRead
-from app.services.course import (
+from app.schemas.test import TestRead
+from app.services.courses import (
     list_courses,
     _get_course_or_404,
     create_course,
@@ -61,7 +62,7 @@ def api_delete_course(
     return delete_course(db, course_id, current_user)
 
 
-@router.get("/{course_id}/tests", response_model=List[dict])
+@router.get("/{course_id}/tests", response_model=List[TestRead])
 def api_list_course_tests(
     course_id: int,
     db: Session = Depends(get_db),
