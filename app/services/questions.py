@@ -15,7 +15,7 @@ from app.models.test_questions import TestQuestion
 def _get_question_or_404(db: Session, question_id: int) -> Question:
     question = (
         db.query(Question)
-        .filter(Question.id == question_id, Question.is_deleted == False)  # noqa: E712
+        .filter(Question.id == question_id, Question.is_deleted == False)
         .first()
     )
     if not question:
@@ -51,9 +51,8 @@ def _is_question_author(question: Question, current_user: CurrentUser) -> bool:
 
 
 def _serialize_latest(question: Question, version: QuestionVersion) -> Dict[str, Any]:
-    # Для списка /questions по ТЗ нужно отдавать последнюю версию + author_id.
     return {
-        "id": version.id,  # id версии (question_versions.id)
+        "id": version.id,
         "question_id": question.id,
         "version": version.version,
         "author_id": question.author_id,
@@ -74,7 +73,7 @@ def list_questions(db: Session, current_user: CurrentUser) -> List[Dict[str, Any
       - по умолчанию: только свои вопросы
       - permission: quest:list:read — видеть вопросы других авторов
     """
-    questions = db.query(Question).filter(Question.is_deleted == False).all()  # noqa: E712
+    questions = db.query(Question).filter(Question.is_deleted == False).all()
     result: List[Dict[str, Any]] = []
 
     for q in questions:
@@ -138,7 +137,6 @@ def create_question(db: Session, data, current_user: CurrentUser) -> QuestionVer
     )
     db.add(v1)
 
-    # Опционально: если передали test_id — добавить вопрос в тест в конец списка
     test_id: Optional[int] = getattr(data, "test_id", None)
     if test_id:
         last = (
@@ -180,12 +178,6 @@ def create_question_version(db: Session, question_id: int, data, current_user: C
     return qv
 
 
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
-from app.core.permissions import Permissions, ensure_default_or_permission
-from app.core.security import CurrentUser
-from app.models.questions import Question
 
 
 def delete_question(db: Session, question_id: int, current_user: CurrentUser) -> None:
