@@ -4,3 +4,4 @@ requirements.txt
 __pycache__/
 app/utils/create_test_key.py
 tokens.txt
+app/init_db.py

@@ -35,7 +35,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_sc
             full_name=payload.get("fullName"),
             roles=payload.get("roles", []),
             permissions=payload.get("permissions", []),
-            blocked=payload.get("blocked", False),
+            is_blocked=payload.get("blocked", False),
         )
     except Exception:
         raise HTTPException(

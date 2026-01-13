@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from app.models.users import User
 from app.schemas.user import UserCreate, UserRead, UserBase
 from app.core.security import CurrentUser
-from app.core.permissions import ensure_permission
+from app.core.permissions import ensure_permission, ensure_default_or_permission
 from app.core.permissions import *
 
 """
