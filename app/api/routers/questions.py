@@ -21,7 +21,7 @@ from app.services.questions import (
     get_question
 )
 
-router = APIRouter(prefix="/questions", tags=["Questions"])
+router = APIRouter(prefix="/api/questions", tags=["Questions"])
 
 
 @router.get("/", response_model=List[QuestionRead])

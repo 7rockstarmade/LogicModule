@@ -1,11 +1,13 @@
 from pydantic import BaseModel
-from typing import Optional
+
 
 class AnswerBase(BaseModel):
     value: int  # -1 если не отвечено, или номер варианта ответа
 
-class AnswerCreate(AnswerBase):
-    pass
+
+class AnswerUpdate(BaseModel):
+    value: int
+
 
 class AnswerRead(AnswerBase):
     id: int
