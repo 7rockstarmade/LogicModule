@@ -19,7 +19,7 @@ from app.services.courses import (
     remove_user_from_course,
 )
 
-router = APIRouter(prefix="/courses", tags=["Courses"])
+router = APIRouter(prefix="/api/courses", tags=["Courses"])
 
 
 @router.get("/", response_model=List[CourseListRead])

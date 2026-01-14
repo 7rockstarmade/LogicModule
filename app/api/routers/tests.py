@@ -13,11 +13,11 @@ from app.services.tests import (
     set_test_active_status,
 )
 
-router = APIRouter(tags=["Tests"])
+router = APIRouter(prefix='/api/courses', tags=["Tests"])
 
 
 @router.post(
-    "/courses/{course_id}/tests",
+    "/{course_id}/tests",
     response_model=TestRead,
     status_code=status.HTTP_201_CREATED,
 )
@@ -31,7 +31,7 @@ def api_create_test(
 
 
 @router.delete(
-    "/courses/{course_id}/tests/{test_id}",
+    "/{course_id}/tests/{test_id}",
     response_model=TestRead,
 )
 def api_delete_test(
@@ -44,7 +44,7 @@ def api_delete_test(
 
 
 @router.get(
-    "/courses/{course_id}/tests/{test_id}/active",
+    "/{course_id}/tests/{test_id}/active",
 )
 def api_get_test_active_status(
     course_id: int,
@@ -63,7 +63,7 @@ def api_get_test_active_status(
 
 
 @router.patch(
-    "/courses/{course_id}/tests/{test_id}/active",
+    "/{course_id}/tests/{test_id}/active",
     response_model=TestRead,
 )
 def api_set_test_active_status(

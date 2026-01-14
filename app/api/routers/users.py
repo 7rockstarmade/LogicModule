@@ -15,7 +15,7 @@ from app.services.users import (
     create_user
 )
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/api/users", tags=["Users"])
 
 """ 1.1 GET /users -> Получить список всех пользователей"""
 @router.get('/', response_model=list[UserRead])
