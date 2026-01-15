@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserDataRead, UserRead, UserUpdate, UserBase
+from app.schemas.user import UserCreate, UserDataRead, UserRead, UserUpdate, UserBase, UserMeRead
 from app.core.security import CurrentUser, get_current_user
 from app.core.permissions import *
 
@@ -17,6 +17,11 @@ from app.services.users import (
 )
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
+
+""" 0.1 GET /users/me -> Получить данные о себе"""
+@router.get('/me', response_model=UserMeRead)
+def api_get_me(current_user: CurrentUser = Depends(get_current_user)):
+    return {"id": current_user.id, "full_name": current_user.full_name}
 
 """ 1.1 GET /users -> Получить список всех пользователей"""
 @router.get('/', response_model=list[UserRead])
@@ -42,7 +47,7 @@ def api_change_user_full_name(user_id: int, user_in: UserUpdate, db: Session = D
     return user
 
 """ 1.4 GET /users/{user_id}/data -> Получить всю информацию о пользователе по ID"""
-@router.get("/api/users/{user_id}/data", response_model=UserDataRead)
+@router.get("/{user_id}/data", response_model=UserDataRead)
 def api_get_user_data(
     user_id: int,
     db: Session = Depends(get_db),
@@ -94,7 +99,8 @@ def api_create_user(db: Session = Depends(get_db), current_user: CurrentUser = D
     data = UserCreate(
         username=current_user.username,
         full_name=current_user.full_name,
-        is_blocked=current_user.is_blocked
+        is_blocked=current_user.is_blocked,
+        email=current_user.email
     )
     user = create_user(db, data, current_user.id)
     return user

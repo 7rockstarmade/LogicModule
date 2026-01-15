@@ -78,8 +78,9 @@ def get_user_data(db: Session, user_id: int, current_user: CurrentUser) -> dict:
         "id": user.id,
         "username": user.username,
         "full_name": user.full_name,
-        "email": getattr(user, "email", None),
-        "is_blocked": getattr(user, "is_blocked", False),
+        "email": user.email,
+        "is_blocked": current_user.is_blocked,
+        "roles": current_user.roles,
         "courses_count": int(courses_count),
         "attempts_count": int(attempts_count),
     }

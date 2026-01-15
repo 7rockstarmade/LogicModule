@@ -12,6 +12,7 @@ class CurrentUser(BaseModel):
     id: int
     username: str
     full_name: str
+    email: str
     roles: List[str] = []
     permissions: List[str] = []
     is_blocked: bool = False
@@ -34,6 +35,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_sc
             username=payload.get("username", ""),
             full_name=payload.get("fullName"),
             roles=payload.get("roles", []),
+            email=payload.get("email"),
             permissions=payload.get("permissions", []),
             is_blocked=payload.get("blocked", False),
         )

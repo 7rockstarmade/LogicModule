@@ -6,8 +6,13 @@ from sqlalchemy.orm import Session
 from app.core.permissions import Permissions, ensure_default_or_permission, ensure_permission
 from app.core.security import CurrentUser
 from app.models.questions import Question
+from app.models.attempts import Attempt
 from app.models.question_versions import QuestionVersion
+from app.models.tests import Test
+from app.models.courses import Course
 from app.models.test_questions import TestQuestion
+
+ATTEMPT_STATUS_IN_PROGRESS = "in_progress"
 
 
 # ---------------- Вспомогательные функции ----------------
@@ -48,6 +53,20 @@ def _get_latest_question_version(db: Session, question_id: int) -> QuestionVersi
 
 def _is_question_author(question: Question, current_user: CurrentUser) -> bool:
     return question.author_id == current_user.id
+
+
+def _has_active_attempt_for_question(db: Session, question_id: int, user_id: int) -> bool:
+    return (
+        db.query(Attempt)
+        .join(TestQuestion, Attempt.test_id == TestQuestion.test_id)
+        .filter(
+            TestQuestion.question_id == question_id,
+            Attempt.user_id == user_id,
+            Attempt.status == ATTEMPT_STATUS_IN_PROGRESS,
+        )
+        .first()
+        is not None
+    )
 
 
 def _serialize_latest(question: Question, version: QuestionVersion) -> Dict[str, Any]:
@@ -94,7 +113,9 @@ def get_question(db: Session, question_id: int, current_user: CurrentUser) -> Qu
     GET /questions/{id} — последняя версия вопроса.
     """
     question = _get_question_or_404(db, question_id)
-    default_allowed = _is_question_author(question, current_user)
+    default_allowed = _is_question_author(question, current_user) or _has_active_attempt_for_question(
+        db, question_id, current_user.id
+    )
     ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_READ)
 
     return _get_latest_question_version(db, question_id)
@@ -105,7 +126,9 @@ def get_question_version(db: Session, question_id: int, version: int, current_us
     GET /questions/{id}/versions/{version} — конкретная версия.
     """
     question = _get_question_or_404(db, question_id)
-    default_allowed = _is_question_author(question, current_user)
+    default_allowed = _is_question_author(question, current_user) or _has_active_attempt_for_question(
+        db, question_id, current_user.id
+    )
     ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_READ)
 
     return _get_question_version_or_404(db, question_id, version)
@@ -116,10 +139,22 @@ def create_question(db: Session, data, current_user: CurrentUser) -> QuestionVer
     POST /questions — создать вопрос и версию 1.
     По ТЗ требуется permission quest:create.
     """
-    ensure_permission(
+    test_id: Optional[int] = getattr(data, "test_id", None)
+    default_allowed = False
+    if test_id:
+        test = db.query(Test).filter(Test.id == test_id, Test.is_deleted == False).first()
+        if not test:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test not found")
+        course = db.query(Course).filter(Course.id == test.course_id, Course.is_deleted == False).first()
+        if not course:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+        default_allowed = course.teacher_id == current_user.id
+
+    ensure_default_or_permission(
+        default_allowed,
         current_user.permissions,
         Permissions.QUEST_CREATE,
-        "You do not have permission to create questions",
+        msg="You do not have permission to create questions",
     )
 
     question = Question(author_id=current_user.id, is_deleted=False)
@@ -137,7 +172,6 @@ def create_question(db: Session, data, current_user: CurrentUser) -> QuestionVer
     )
     db.add(v1)
 
-    test_id: Optional[int] = getattr(data, "test_id", None)
     if test_id:
         last = (
             db.query(TestQuestion)
