@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routers import users, courses, tests, questions, attempts, answers
+from app.api.routers import users, courses, tests, questions, attempts, answers, notifications
 from app.core.config import settings
 from app import models
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,3 +23,4 @@ app.include_router(tests.router)
 app.include_router(questions.router)
 app.include_router(attempts.router)
 app.include_router(answers.router)
+app.include_router(notifications.router)

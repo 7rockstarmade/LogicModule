@@ -9,6 +9,7 @@ from app.core.security import CurrentUser
 from app.core.permissions import Permissions
 from app.schemas.course_user import CourseUserRead
 from app.core.permissions import ensure_permission, ensure_default_or_permission
+from app.services.notifications import create_notification
 
 # ---------------- Вспомогательные функции ----------------
 
@@ -156,6 +157,13 @@ def enroll_user_to_course(db: Session, course_id: int, current_user: CurrentUser
     link = CourseUser(course_id=course_id, user_id=target_user_id, enrolled_at=datetime.utcnow())
     db.add(link)
     db.commit()
+    create_notification(
+        db,
+        user_id=current_user.id,
+        message=f"Вы записаны на курс «{course.title}».",
+        payload={"type": "course_enroll", "course_id": course.id},
+    )
+
     db.refresh(link)
     return link
 
@@ -174,4 +182,10 @@ def remove_user_from_course(db: Session, course_id: int, user_id: int, current_u
     link = db.query(CourseUser).filter_by(course_id=course_id, user_id=user_id).first()
     if link:
         db.delete(link)
+        create_notification(
+            db,
+            user_id=user_id,
+            message=f"Вы удалены с курса «{course.title}».",
+            payload={"type": "course_unenroll", "course_id": course.id},
+        )
         db.commit()

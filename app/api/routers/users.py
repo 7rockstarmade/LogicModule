@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserRead, UserUpdate, UserBase
+from app.schemas.user import UserCreate, UserDataRead, UserRead, UserUpdate, UserBase
 from app.core.security import CurrentUser, get_current_user
 from app.core.permissions import *
 
 from app.services.users import (
+    get_user_data,
     list_users,
     get_user_basic_info,
     update_user_full_name,
@@ -41,10 +42,14 @@ def api_change_user_full_name(user_id: int, user_in: UserUpdate, db: Session = D
     return user
 
 """ 1.4 GET /users/{user_id}/data -> Получить всю информацию о пользователе по ID"""
-@router.get('/{user_id}/data')
-def api_get_user_data_by_id():
-    ... 
-    """В разработке"""
+@router.get("/api/users/{user_id}/data", response_model=UserDataRead)
+def api_get_user_data(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    return get_user_data(db, user_id, current_user)
+
 
 """ 1.5 GET /users/{user_id}/roles -> Получить роли пользователя по ID"""
 @router.get('/{user_id}/roles')

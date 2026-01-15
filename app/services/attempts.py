@@ -15,6 +15,9 @@ from app.models.course_users import CourseUser
 from app.models.question_versions import QuestionVersion
 from app.models.tests import Test
 from app.models.test_questions import TestQuestion
+from app.services.notifications import create_notification
+from app.models.courses import Course
+from app.models.tests import Test
 
 
 ATTEMPT_STATUS_IN_PROGRESS = "in_progress"
@@ -223,6 +226,24 @@ def finish_attempt(db: Session, attempt_id: int, current_user: CurrentUser) -> A
     attempt.status = ATTEMPT_STATUS_FINISHED
     attempt.finished_at = datetime.utcnow()
     attempt.score = score
+
+    test = db.query(Test).filter(Test.id == attempt.test_id).first()
+    course = db.query(Course).filter(Course.id == test.course_id).first()
+
+    create_notification(
+        db,
+        user_id=attempt.user_id,
+        message=f"Вы завершили тест «{test.title}». Результат: {float(attempt.score):.1f}%",
+        payload={"type": "attempt_finished", "test_id": test.id, "attempt_id": attempt.id, "score": float(attempt.score)},
+    )
+
+    create_notification(
+        db,
+        user_id=course.teacher_id,
+        message=f"Пользователь #{attempt.user_id} завершил тест «{test.title}». Результат: {float(attempt.score):.1f}%",
+        payload={"type": "attempt_finished_teacher", "test_id": test.id, "attempt_id": attempt.id, "user_id": attempt.user_id},
+    )
+
 
     db.add(attempt)
     db.commit()

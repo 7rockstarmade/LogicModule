@@ -1,6 +1,9 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
+from app.models.attempts import Attempt
+from app.models.course_users import CourseUser
 from app.models.users import User
 from app.schemas.user import UserCreate, UserRead, UserBase
 from app.core.security import CurrentUser
@@ -44,6 +47,43 @@ def get_user_basic_info(db: Session, current_user: CurrentUser, user_id: int) ->
     return user
 
 
+def get_user_data(db: Session, user_id: int, current_user: CurrentUser) -> dict:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    default_allowed = (user_id == current_user.id)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.USER_DATA_READ,
+        msg="You do not have permission to read this user's data",
+    )
+
+    courses_count = (
+        db.query(func.count())
+        .select_from(CourseUser)
+        .filter(CourseUser.user_id == user_id)
+        .scalar()
+    ) or 0
+
+    attempts_count = (
+        db.query(func.count())
+        .select_from(Attempt)
+        .filter(Attempt.user_id == user_id)
+        .scalar()
+    ) or 0
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.full_name,
+        "email": getattr(user, "email", None),
+        "is_blocked": getattr(user, "is_blocked", False),
+        "courses_count": int(courses_count),
+        "attempts_count": int(attempts_count),
+    }
+
 """
 Изменить ФИО пользователя.
 Доступ:
@@ -58,12 +98,6 @@ def update_user_full_name(db: Session, current_user: CurrentUser, user_id: int, 
     db.commit()
     db.refresh(user)
     return user
-
-
-# Получение информации о пользователе (курсы, оценки, тесты)
-def get_user_data():
-    ...
-    #потом доделаю
 
 
 """

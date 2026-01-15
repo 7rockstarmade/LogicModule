@@ -28,3 +28,17 @@ class UserUpdate(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserDataRead(BaseModel):
+    id: int
+    username: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_blocked: bool
+
+    courses_count: int
+    attempts_count: int
+
+    class Config:
+        orm_mode = True

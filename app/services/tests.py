@@ -17,6 +17,9 @@ from app.models.question_versions import QuestionVersion
 from app.models.attempts import Attempt
 from app.models.answers import Answer
 from app.models.users import User
+from app.services.notifications import create_notification
+from app.models.course_users import CourseUser
+
 
 
 ATTEMPT_STATUS_FINISHED = "finished"
@@ -156,6 +159,17 @@ def set_test_active_status(db: Session, course_id: int, test_id: int, current_us
         for a in in_progress:
             a.status = ATTEMPT_STATUS_FINISHED
             db.add(a)
+
+    if is_active:
+        students = db.query(CourseUser).filter(CourseUser.course_id == course.id).all()
+        for s in students:
+            create_notification(
+                db,
+                user_id=s.user_id,
+                message=f"Тест «{test.title}» активирован и доступен для прохождения.",
+                payload={"type": "test_active", "course_id": course.id, "test_id": test.id},
+            )
+
 
     db.add(test)
     db.commit()
