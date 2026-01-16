@@ -94,6 +94,7 @@ def create_test(db: Session, course_id: int, title: str, is_active: bool, curren
         current_user.permissions,
         Permissions.COURSE_TEST_ADD,
         msg="You do not have permission to create tests",
+        user_roles=current_user.roles,
     )
 
     test = Test(course_id=course_id, title=title, is_active=is_active, is_deleted=False)
@@ -113,6 +114,7 @@ def delete_test(db: Session, course_id: int, test_id: int, current_user: Current
         current_user.permissions,
         Permissions.COURSE_TEST_DEL,
         msg="You do not have permission to delete tests",
+        user_roles=current_user.roles,
     )
 
     test.is_deleted = True
@@ -132,6 +134,7 @@ def get_test_active_status(db: Session, course_id: int, test_id: int, current_us
         current_user.permissions,
         Permissions.COURSE_TEST_READ,
         msg="You do not have access to this test",
+        user_roles=current_user.roles,
     )
 
     return {"is_active": bool(test.is_active)}
@@ -147,6 +150,7 @@ def set_test_active_status(db: Session, course_id: int, test_id: int, current_us
         current_user.permissions,
         Permissions.COURSE_TEST_WRITE,
         msg="You do not have permission to change test active status",
+        user_roles=current_user.roles,
     )
 
     test.is_active = is_active
@@ -191,6 +195,7 @@ def add_question_to_test(db: Session, test_id: int, question_id: int, current_us
         current_user.permissions,
         Permissions.TEST_QUEST_ADD,
         msg="You do not have permission to add questions to test",
+        user_roles=current_user.roles,
     )
 
     exists = (
@@ -226,6 +231,7 @@ def remove_question_from_test(db: Session, test_id: int, question_id: int, curre
         current_user.permissions,
         Permissions.TEST_QUEST_DEL,
         msg="You do not have permission to remove questions from test",
+        user_roles=current_user.roles,
     )
 
     link = (
@@ -264,6 +270,7 @@ def reorder_test_questions(db: Session, test_id: int, question_ids: List[int], c
         current_user.permissions,
         Permissions.TEST_QUEST_UPDATE,
         msg="You do not have permission to reorder questions",
+        user_roles=current_user.roles,
     )
 
     existing = (
@@ -316,6 +323,7 @@ def list_test_result_users(db: Session, test_id: int, current_user: CurrentUser)
         current_user.permissions,
         Permissions.TEST_ANSWER_READ,
         msg="You do not have permission to read test results",
+        user_roles=current_user.roles,
     )
 
     user_ids = (
@@ -352,6 +360,7 @@ def list_test_grades(db: Session, test_id: int, current_user: CurrentUser, user_
         current_user.permissions,
         Permissions.TEST_ANSWER_READ,
         msg="You do not have permission to read grades",
+        user_roles=current_user.roles,
     )
 
     q = db.query(Attempt).filter(Attempt.test_id == test.id, Attempt.status == ATTEMPT_STATUS_FINISHED)
@@ -383,6 +392,7 @@ def list_test_answers(db: Session, test_id: int, current_user: CurrentUser, user
         current_user.permissions,
         Permissions.TEST_ANSWER_READ,
         msg="You do not have permission to read answers",
+        user_roles=current_user.roles,
     )
 
     attempts_q = (

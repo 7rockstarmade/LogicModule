@@ -55,7 +55,12 @@ def list_courses(db: Session) -> List[Course]:
 Доступ: permission 'course:add'
 """
 def create_course(db: Session, current_user: CurrentUser, title: str, description: str) -> Course:
-    ensure_permission(current_user.permissions, Permissions.COURSE_ADD, "You do not have permission to create courses")
+    ensure_permission(
+        current_user.permissions,
+        Permissions.COURSE_ADD,
+        "You do not have permission to create courses",
+        user_roles=current_user.roles,
+    )
     course = Course(title=title, description=description, teacher_id=current_user.id)
     db.add(course)
     db.commit()
@@ -72,7 +77,12 @@ def create_course(db: Session, current_user: CurrentUser, title: str, descriptio
 def update_course(db: Session, course_id: int, current_user: CurrentUser, title: str | None, description: str | None) -> Course:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_INFO_WRITE)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_INFO_WRITE,
+        user_roles=current_user.roles,
+    )
 
     if title:
         course.title = title
@@ -93,7 +103,12 @@ def update_course(db: Session, course_id: int, current_user: CurrentUser, title:
 def delete_course(db: Session, course_id: int, current_user: CurrentUser) -> Course:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_DEL)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_DEL,
+        user_roles=current_user.roles,
+    )
 
     course.is_deleted = True
     db.commit()
@@ -113,7 +128,12 @@ def list_course_tests(db: Session, course_id: int, current_user: CurrentUser,) -
         _is_course_teacher(course, current_user)
         or _is_student_enrolled(course, current_user)
     )
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_TESTLIST)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_TESTLIST,
+        user_roles=current_user.roles,
+    )
 
     return (
         db.query(Test)
@@ -134,7 +154,12 @@ def list_course_tests(db: Session, course_id: int, current_user: CurrentUser,) -
 def list_course_students(db: Session, course_id: int, current_user: CurrentUser) -> List[CourseUser]:
     course = _get_course_or_404(db, course_id)
     default_allowed = _is_course_teacher(course, current_user)
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_USERLIST)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_USERLIST,
+        user_roles=current_user.roles,
+    )
     return course.students_links
 
 
@@ -148,7 +173,12 @@ def enroll_user_to_course(db: Session, course_id: int, current_user: CurrentUser
     course = _get_course_or_404(db, course_id)
     target_user_id = target_user_id or current_user.id
     default_allowed = target_user_id == current_user.id
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_USER_ADD)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_USER_ADD,
+        user_roles=current_user.roles,
+    )
 
     existing = db.query(CourseUser).filter_by(course_id=course_id, user_id=target_user_id).first()
     if existing:
@@ -177,7 +207,12 @@ def enroll_user_to_course(db: Session, course_id: int, current_user: CurrentUser
 def remove_user_from_course(db: Session, course_id: int, user_id: int, current_user: CurrentUser) -> None:
     course = _get_course_or_404(db, course_id)
     default_allowed = user_id == current_user.id
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.COURSE_USER_DEL)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.COURSE_USER_DEL,
+        user_roles=current_user.roles,
+    )
 
     link = db.query(CourseUser).filter_by(course_id=course_id, user_id=user_id).first()
     if link:

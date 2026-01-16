@@ -4,6 +4,9 @@ from jose import jwt, JWTError
 from pydantic import BaseModel
 from typing import List, Optional
 from app.core.config import settings
+from app.db.session import get_db
+from app.models.users import User
+from sqlalchemy.orm import Session
 
 auth_scheme = HTTPBearer()
 
@@ -18,7 +21,10 @@ class CurrentUser(BaseModel):
     is_blocked: bool = False
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),) -> CurrentUser:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),
+    db: Session = Depends(get_db),
+) -> CurrentUser:
     token = credentials.credentials
 
     try:
@@ -30,14 +36,18 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_sc
         )
 
     try:
+        user_id = int(payload["sub"])
+        db_user = db.query(User).filter(User.id == user_id).first()
+        roles = list(db_user.roles or []) if db_user else payload.get("roles", [])
+        is_blocked = bool(db_user.is_blocked) if db_user else payload.get("blocked", False)
         return CurrentUser(
-            id=int(payload["sub"]),
+            id=user_id,
             username=payload.get("username", ""),
             full_name=payload.get("fullName"),
-            roles=payload.get("roles", []),
+            roles=roles,
             email=payload.get("email"),
             permissions=payload.get("permissions", []),
-            is_blocked=payload.get("blocked", False),
+            is_blocked=is_blocked,
         )
     except Exception:
         raise HTTPException(

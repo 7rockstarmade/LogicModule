@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import ARRAY, Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -10,7 +10,8 @@ class User(Base):
     full_name = Column(String, nullable=False)
     email = Column(String, nullable=True)
     is_blocked = Column(Boolean, nullable=False, default=False)
-
+    roles = Column(ARRAY(String), nullable=False, default=list)
+    
     courses_taught = relationship(
         "Course",
         back_populates="teacher",

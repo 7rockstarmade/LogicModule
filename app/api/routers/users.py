@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserDataRead, UserRead, UserUpdate, UserBase, UserMeRead
+from app.schemas.user import UserCreate, UserDataRead, UserRead, UserUpdate, UserBase, UserMeRead, UserRolesUpdate
 from app.core.security import CurrentUser, get_current_user
 from app.core.permissions import *
 
@@ -13,7 +13,8 @@ from app.services.users import (
     get_user_roles,
     get_user_block_status,
     set_user_block_status,
-    create_user
+    create_user,
+    set_user_roles,
 )
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
@@ -68,9 +69,18 @@ def api_get_user_roles(user_id: int, db: Session = Depends(get_db), current_user
 
 """ 1.6 PUT /users/{user_id}/roles -> Изменить роли пользователя по ID"""
 @router.put('/{user_id}/roles')
-def api_set_user_roles():
-    ...
-    """В разработке"""
+def api_set_user_roles(
+    user_id: int,
+    user_in: UserRolesUpdate,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    return set_user_roles(
+        db=db,
+        user_id=user_id,
+        roles=user_in.roles,
+        current_user=current_user,
+    )
 
 """ 1.7 GET /users/{user_id}/block -> Получить статус блокировки пользователя по ID"""
 @router.get('/{user_id}/block')
@@ -100,7 +110,8 @@ def api_create_user(db: Session = Depends(get_db), current_user: CurrentUser = D
         username=current_user.username,
         full_name=current_user.full_name,
         is_blocked=current_user.is_blocked,
-        email=current_user.email
+        email=current_user.email,
+        roles=current_user.roles,
     )
     user = create_user(db, data, current_user.id)
     return user

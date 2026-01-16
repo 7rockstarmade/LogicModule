@@ -82,6 +82,7 @@ def list_attempt_answers(db: Session, attempt_id: int, current_user: CurrentUser
         current_user.permissions,
         Permissions.ANSWER_READ,
         msg="You do not have access to these answers",
+        user_roles=current_user.roles,
     )
 
     return db.query(Answer).filter(Answer.attempt_id == attempt_id).all()
@@ -109,6 +110,7 @@ def update_answer(db: Session, answer_id: int, value: int, current_user: Current
         current_user.permissions,
         Permissions.ANSWER_UPDATE,
         msg="You do not have permission to update this answer",
+        user_roles=current_user.roles,
     )
 
     if attempt.status == ATTEMPT_STATUS_FINISHED:
@@ -142,6 +144,7 @@ def reset_answer(db: Session, answer_id: int, current_user: CurrentUser) -> Answ
         current_user.permissions,
         Permissions.ANSWER_DEL,
         msg="You do not have permission to delete this answer",
+        user_roles=current_user.roles,
     )
 
     if attempt.status == ATTEMPT_STATUS_FINISHED:

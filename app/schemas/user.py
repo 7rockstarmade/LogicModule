@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, Field
 from typing import Optional, List
+
 
 # Базовые поля пользователя
 class UserBase(BaseModel):
@@ -20,7 +21,9 @@ class UserCreate(BaseModel):
     full_name: str
     email: Optional[EmailStr] = None
     is_blocked: bool
-
+    roles: List[str] = Field(default_factory=list)
+    roles: List[str]
+    
     @field_validator("email", mode="before")
     def empty_email_to_none(cls, value):
         if value == "":
@@ -63,3 +66,7 @@ class UserMeRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class UserRolesUpdate(BaseModel):
+    roles: List[str] = Field(default_factory=list)

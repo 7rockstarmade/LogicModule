@@ -98,7 +98,12 @@ def list_questions(db: Session, current_user: CurrentUser) -> List[Dict[str, Any
     for q in questions:
         default_allowed = _is_question_author(q, current_user)
         try:
-            ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_LIST_READ)
+            ensure_default_or_permission(
+                default_allowed,
+                current_user.permissions,
+                Permissions.QUEST_LIST_READ,
+                user_roles=current_user.roles,
+            )
         except HTTPException:
             continue
 
@@ -116,7 +121,12 @@ def get_question(db: Session, question_id: int, current_user: CurrentUser) -> Qu
     default_allowed = _is_question_author(question, current_user) or _has_active_attempt_for_question(
         db, question_id, current_user.id
     )
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_READ)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.QUEST_READ,
+        user_roles=current_user.roles,
+    )
 
     return _get_latest_question_version(db, question_id)
 
@@ -129,7 +139,12 @@ def get_question_version(db: Session, question_id: int, version: int, current_us
     default_allowed = _is_question_author(question, current_user) or _has_active_attempt_for_question(
         db, question_id, current_user.id
     )
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_READ)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.QUEST_READ,
+        user_roles=current_user.roles,
+    )
 
     return _get_question_version_or_404(db, question_id, version)
 
@@ -155,6 +170,7 @@ def create_question(db: Session, data, current_user: CurrentUser) -> QuestionVer
         current_user.permissions,
         Permissions.QUEST_CREATE,
         msg="You do not have permission to create questions",
+        user_roles=current_user.roles,
     )
 
     question = Question(author_id=current_user.id, is_deleted=False)
@@ -193,7 +209,12 @@ def create_question_version(db: Session, question_id: int, data, current_user: C
     """
     question = _get_question_or_404(db, question_id)
     default_allowed = _is_question_author(question, current_user)
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_UPDATE)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.QUEST_UPDATE,
+        user_roles=current_user.roles,
+    )
 
     last = _get_latest_question_version(db, question_id)
     next_version = last.version + 1
@@ -231,7 +252,12 @@ def delete_question(db: Session, question_id: int, current_user: CurrentUser) ->
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
 
     default_allowed = question.author_id == current_user.id
-    ensure_default_or_permission(default_allowed, current_user.permissions, Permissions.QUEST_DEL)
+    ensure_default_or_permission(
+        default_allowed,
+        current_user.permissions,
+        Permissions.QUEST_DEL,
+        user_roles=current_user.roles,
+    )
 
     question.is_deleted = True
     db.add(question)

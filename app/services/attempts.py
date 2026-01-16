@@ -105,6 +105,7 @@ def create_attempt(db: Session, test_id: int, current_user: CurrentUser) -> Atte
         current_user.permissions,
         Permissions.COURSE_TEST_READ,
         msg="You do not have access to this test",
+        user_roles=current_user.roles,
     )
 
     existing_in_progress = (
@@ -188,6 +189,7 @@ def get_attempt(db: Session, attempt_id: int, current_user: CurrentUser) -> Atte
         current_user.permissions,
         Permissions.TEST_ANSWER_READ,
         msg="You do not have access to this attempt",
+        user_roles=current_user.roles,
     )
     return attempt
 
